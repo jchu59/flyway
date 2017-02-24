@@ -185,6 +185,22 @@
             <artifactId>de.flapdoodle.embed.mongo</artifactId>
             <version>1.50.5</version>
         </dependency>
+        <dependency>
+            <groupId>ru.yandex.qatools.embed</groupId>
+            <artifactId>embedded-services</artifactId>
+            <version>1.21</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>elasticsearch-river-jdbc</artifactId>
+                    <groupId>org.xbib.elasticsearch.plugin</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
       </dependencies>
 
     <build>

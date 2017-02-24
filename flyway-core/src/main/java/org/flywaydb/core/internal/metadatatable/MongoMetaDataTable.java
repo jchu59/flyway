@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
+import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.MigrationType;
 import org.flywaydb.core.internal.util.MongoDatabaseUtil;
@@ -255,11 +256,21 @@ public class MongoMetaDataTable implements FlywayMetaDataTable {
         CreateCollectionOptions collectionOptions = new CreateCollectionOptions().
                 validationOptions(validator);
 
-        Boolean dbExists = MongoDatabaseUtil.exists(client, dbName);
-        if (dbExists) {
-            LOG.debug("Database " + dbName + " already exists. Skipping database creation.");
-        } else {
-            LOG.info("Creating Mongo database " + dbName + " ...");
+        Boolean dbExists = false;
+        try {
+            dbExists = MongoDatabaseUtil.exists(client, dbName);
+            if (dbExists) {
+                LOG.debug("Database " + dbName + " already exists. Skipping database creation.");
+            } else {
+                LOG.info("Creating Mongo database " + dbName + " ...");
+            }
+        } catch (FlywayException e) {
+            // If user does not have admin privilege, MongoDatabaseUtil.exists will throw an exception.
+            // Then determine if the schema_version collection exists.
+            dbExists = Boolean.valueOf(MongoDatabaseUtil.hasCollection(this.client, dbName, "schema_version"));
+            if (!dbExists) {
+                LOG.info("Creating Mongo schema marker " + dbName + " ...");
+            }
         }
         mongoDatabase.createCollection(collectionName, collectionOptions);
         LOG.debug("Metadata collection " + collectionName + " created.");
