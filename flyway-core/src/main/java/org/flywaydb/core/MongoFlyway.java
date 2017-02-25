@@ -669,13 +669,34 @@ public class MongoFlyway implements MongoFlywayConfiguration {
 	 *
      * Providing a MongoClient through this method will override the client created by using
      * the mongo uri. Use this method to retain the control over MongoClient instance.
+	 *
+	 * The databaseName will be supplied from a flyway.mongoUri property.
      *
 	 * @param client The MongoClient to use. Must have the necessary privileges to execute ddl.
 	 */
 	public void setMongoClient(MongoClient client) {
+		setMongoClient(client, null);
+	}
+
+	/**
+	 * Sets the MongoClient to use. Must have the necessary privileges to execute ddl.
+	 *
+	 * Providing a MongoClient through this method will override the client created by using
+	 * the mongo uri. Use this method to retain the control over MongoClient instance.
+	 *
+	 * @param client The MongoClient to use. Must have the necessary privileges to execute ddl.
+	 */
+	public void setMongoClient(MongoClient client, String databaseName) {
+		if (this.client != null) {
+			this.client.close();
+		}
+		if (databaseName != null) {
+			this.databaseName = databaseName;
+		}
 		this.client = client;
 		createdMongoClient = false;
 	}
+
 
 	/**
 	 * Sets the MongoClientURI to use.
@@ -685,13 +706,15 @@ public class MongoFlyway implements MongoFlywayConfiguration {
 	 * @param uri   MongoClient URI used to connect to a MongoDB database server.
 	 */
 	public void setMongoClientUri(String uri) {
-        MongoClientURI mongoUri = new MongoClientURI(uri);
-        this.databaseName = mongoUri.getDatabase();
-        if (databaseName == null) {
-            throw new FlywayException("Cannot find database from Mongo URI!");
-        }
-        this.client = new MongoClient(mongoUri);
-        createdMongoClient = true;
+        if (client == null) {
+			MongoClientURI mongoUri = new MongoClientURI(uri);
+			this.client = new MongoClient(mongoUri);
+			createdMongoClient = true;
+			this.databaseName = mongoUri.getDatabase();
+			if (databaseName == null) {
+				throw new FlywayException("Cannot find database from Mongo URI!");
+			}
+		}
 	}
 
 	/**
@@ -1046,7 +1069,8 @@ public class MongoFlyway implements MongoFlywayConfiguration {
 		if (StringUtils.hasText(uriProp)) {
 			setMongoClientUri(uriProp);
 		} else {
-			LOG.warn("Incomplete MongoDB configuration! flyway.mongoUri must be set.");
+			LOG.warn("Incomplete MongoDB configuration! flyway.mongoUri must be set unless you supply your" +
+					"own externally created mongoClient.");
 		}
 
 		String locationsProp = props.remove("flyway.locations");

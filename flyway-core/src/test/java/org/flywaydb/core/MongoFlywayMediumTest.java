@@ -578,4 +578,22 @@ public class MongoFlywayMediumTest  extends EmbeddedMongoDb {
             LogFactory.setLogCreator(null);
         }
     }
+
+    @Test
+    public void validExternalMongoClient() {
+
+        Properties props = new Properties();
+        props.setProperty("flyway.locations", "db.migrations.mongo");
+        props.setProperty("flyway.validateOnMigrate", "false");
+        // Do not set flywway.mongoUri
+        //props.setProperty("flyway.mongoUri", getMongoUri());
+
+        MongoFlyway flyway = new MongoFlyway();
+        flyway.configure(props);
+        // Set mongo client so that flyway does not close it.
+        flyway.setMongoClient(getMongoClient(), getDatabaseName());
+        flyway.migrate();
+
+
+    }
 }
